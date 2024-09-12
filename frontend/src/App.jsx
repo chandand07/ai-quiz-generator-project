@@ -10,6 +10,7 @@ import EducatorSignup from './components/EducatorSignup';
 import EducatorDashboard from './components/EducatorDashboard';
 import QuizDetails from './components/QuizDetails';
 import CreateQuiz from './components/CreateQuiz';
+import StudentQuiz from './components/StudentQuiz';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/educator-dashboard" element={<EducatorDashboard />} />
         <Route path="/quiz-details" element={<QuizDetails />} />
         <Route path="/create-quiz" element={<CreateQuiz />} />
+        <Route path='/student-quiz' element={<StudentQuiz/>}/>
       </Routes>
     </Router>
   );

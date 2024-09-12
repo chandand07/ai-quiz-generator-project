@@ -1,13 +1,22 @@
 // src/components/QuizCode.jsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const QuizCode = () => {
   const [quizCode, setQuizCode] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert(`Quiz code entered: ${quizCode}`);
+  
     // Add logic to handle quiz submission
+    navigate('/student-quiz', { 
+      state: { 
+        quizCode, 
+        subject: 'Mathematics', 
+        testDate: '2023-06-01' 
+      } 
+    });
   };
 
   return (

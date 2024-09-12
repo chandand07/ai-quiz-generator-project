@@ -1,16 +1,32 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate , Link } from 'react-router-dom';
 
 const StudentLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    alert(`Logged in as: ${email}`);
-    navigate('/dashboard'); 
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        navigate('/dashboard');
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred. Please try again.');
+    }
   };
 
   return (
@@ -25,6 +41,7 @@ const StudentLogin = () => {
             placeholder="Enter email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
           />
         </div>
         <div className="mb-4">
@@ -35,9 +52,10 @@ const StudentLogin = () => {
             placeholder="Enter password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
         </div>
-        <button className="bg-blue-500 text-white w-full py-2 rounded hover:bg-blue-700">
+        <button type="submit" className="bg-blue-500 text-white w-full py-2 rounded hover:bg-blue-700">
           Login
         </button>
         <div className="mt-4 text-center">
@@ -50,4 +68,3 @@ const StudentLogin = () => {
 };
 
 export default StudentLogin;
-
