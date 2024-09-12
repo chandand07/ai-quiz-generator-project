@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import AIQuizGenerator from './AIQuizGenerator';
 
 const CreateQuiz = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { quizCode, subject, testDate, testTime } = location.state || {}; 
+  const { quizCode, subject, testDate, testTime } = location.state || {};
   const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState({
     question: '',
     options: ['', '', '', ''],
-    correctOption: ''
+    correctOption: '',
+    isAIGenerated: false
   });
 
   const handleQuestionChange = (e) => {
@@ -28,35 +30,76 @@ const CreateQuiz = () => {
 
   const addQuestion = () => {
     if (currentQuestion.question && currentQuestion.correctOption) {
-      setQuestions([...questions, currentQuestion]);
+      setQuestions([...questions, { ...currentQuestion, isAIGenerated: false }]);
       setCurrentQuestion({
         question: '',
         options: ['', '', '', ''],
-        correctOption: ''
+        correctOption: '',
+        isAIGenerated: false
       });
     } else {
       alert('Please fill in the question and select a correct option.');
     }
   };
 
+  const handleAIGeneratedQuestions = (aiQuestions) => {
+    const formattedAIQuestions = aiQuestions.map(q => ({
+      ...q,
+      isAIGenerated: true
+    }));
+    setQuestions([...questions, ...formattedAIQuestions]);
+  };
+
   const handleSubmit = () => {
-    console.log('Quiz submitted:', { quizCode, testDate, testTime, questions });
+    if (questions.length === 0) {
+      alert('Please add at least one question before submitting the quiz.');
+      return;
+    }
+    console.log('Quiz submitted:', { quizCode, subject, testDate, testTime, questions });
     navigate('/educator-dashboard');
+  };
+
+  const removeQuestion = (index) => {
+    const newQuestions = [...questions];
+    newQuestions.splice(index, 1);
+    setQuestions(newQuestions);
   };
 
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-6">Create Quiz</h1>
-      <div className="flex">
-        {/* Left side placeholder */}
-        <div className="w-1/2 pr-4">
-          <div className="bg-gray-100 p-4 rounded-lg h-full flex items-center justify-center">
-            <p className="text-gray-500 text-center">Placeholder for future features or quiz preview</p>
+      <div className="flex flex-col md:flex-row">
+        {/* Left side - AI Quiz Generator */}
+        <div className="w-full md:w-1/2 pr-0 md:pr-4 mb-8 md:mb-0">
+          <AIQuizGenerator onQuestionsGenerated={handleAIGeneratedQuestions} />
+          
+          {/* Display AI generated questions */}
+          <div className="mt-8">
+            <h2 className="text-xl font-bold mb-4">AI Generated Questions</h2>
+            {questions.filter(q => q.isAIGenerated).map((q, index) => (
+              <div key={index} className="mb-4 p-4 bg-gray-100 rounded">
+                <h3 className="font-bold mb-2">Question {index + 1}</h3>
+                <p className="mb-2">{q.question}</p>
+                <ol className="list-decimal list-inside">
+                  {q.options.map((option, optIndex) => (
+                    <li key={optIndex} className={optIndex === parseInt(q.correctOption) ? 'font-bold' : ''}>
+                      {option}
+                    </li>
+                  ))}
+                </ol>
+                <button
+                  onClick={() => removeQuestion(questions.indexOf(q))}
+                  className="mt-2 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Right side - Question creation form */}
-        <div className="w-1/2 pl-4">
+        {/* Right side - Manual Question creation form */}
+        <div className="w-full md:w-1/2 pl-0 md:pl-4">
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 className="text-xl font-bold mb-4">Quiz Details</h2>
             <p>Quiz Code: {quizCode}</p>
@@ -106,10 +149,10 @@ const CreateQuiz = () => {
             </button>
           </div>
 
-          {/* Display added questions */}
+          {/* Display manually added questions */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-xl font-bold mb-4">Added Questions</h2>
-            {questions.map((q, index) => (
+            <h2 className="text-xl font-bold mb-4">Manually Added Questions</h2>
+            {questions.filter(q => !q.isAIGenerated).map((q, index) => (
               <div key={index} className="mb-4 p-4 bg-gray-100 rounded">
                 <h3 className="font-bold mb-2">Question {index + 1}</h3>
                 <p className="mb-2">{q.question}</p>
@@ -120,6 +163,12 @@ const CreateQuiz = () => {
                     </li>
                   ))}
                 </ol>
+                <button
+                  onClick={() => removeQuestion(questions.indexOf(q))}
+                  className="mt-2 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
+                >
+                  Remove
+                </button>
               </div>
             ))}
           </div>
