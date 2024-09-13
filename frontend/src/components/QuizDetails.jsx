@@ -3,17 +3,38 @@ import { useNavigate } from 'react-router-dom';
 
 const QuizDetails = () => {
   const [quizCode, setQuizCode] = useState('');
-  const [subject, setSubject] = useState('');  // Add this line
+  const [subject, setSubject] = useState('');
   const [testDate, setTestDate] = useState('');
   const [testTime, setTestTime] = useState('');
+  const [testDuration, setTestDuration] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (quizCode && subject && testDate && testTime) {  // Update this line
-      navigate('/create-quiz', { state: { quizCode, subject, testDate, testTime } });  // Update this line
-    } else {
-      alert('Please fill in all fields');
+    try {
+      const response = await fetch('http://localhost:5000/api/quiz/details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ 
+          quizCode, 
+          subject, 
+          testDate, 
+          testTime, 
+          testDuration: parseInt(testDuration) 
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        navigate('/create-quiz', { state: { quizId: data.quizId } });
+      } else {
+        throw new Error(data.message || 'Failed to save quiz details');
+      }
+    } catch (error) {
+      console.error('Error saving quiz details:', error);
+      alert(error.message || 'An error occurred. Please try again.');
     }
   };
 
@@ -34,7 +55,6 @@ const QuizDetails = () => {
             required
           />
         </div>
-        {/* Add this new field */}
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="subject">
             Subject
@@ -61,7 +81,7 @@ const QuizDetails = () => {
             required
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="testTime">
             Test Time
           </label>
@@ -71,6 +91,19 @@ const QuizDetails = () => {
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             value={testTime}
             onChange={(e) => setTestTime(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-6">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="testDuration">
+            Test Duration (minutes)
+          </label>
+          <input
+            type="number"
+            id="testDuration"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            value={testDuration}
+            onChange={(e) => setTestDuration(e.target.value)}
             required
           />
         </div>

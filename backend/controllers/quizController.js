@@ -76,3 +76,78 @@ exports.generateQuizFromPDF = [
     }
   }
 ];
+const Quiz = require('../models/Quiz');
+
+exports.createQuizDetails = async (req, res) => {
+  try {
+    console.log('Received quiz details:', req.body);
+    const { quizCode, subject, testDate, testTime, testDuration } = req.body;
+    const quiz = await Quiz.create({
+      quizCode,
+      subject,
+      testDate,
+      testTime,
+      testDuration: parseInt(testDuration),
+      creator: req.user._id
+    });
+    console.log('Created quiz:', quiz);
+    res.status(201).json({
+      status: 'success',
+      quizId: quiz._id
+    });
+  } catch (error) {
+    console.error('Error in createQuizDetails:', error);
+    res.status(400).json({
+      status: 'fail',
+      message: error.message,
+      details: error.errors ? Object.values(error.errors).map(e => e.message) : null
+    });
+  }
+};
+
+exports.createQuiz = async (req, res) => {
+  try {
+    const { quizId, questions } = req.body;
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Quiz not found'
+      });
+    }
+    if (quiz.creator.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        status: 'fail',
+        message: 'You are not authorized to modify this quiz'
+      });
+    }
+    quiz.questions = questions;
+    await quiz.save();
+    res.status(200).json({
+      status: 'success',
+      message: 'Quiz created successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'fail',
+      message: error.message
+    });
+  }
+};
+exports.getEducatorQuizzes = async (req, res) => {
+  try {
+    const quizzes = await Quiz.find({ creator: req.user._id })
+      .select('quizCode subject testDate testTime testDuration')
+      .sort({ testDate: 1, testTime: 1 });
+
+    res.status(200).json({
+      status: 'success',
+      quizzes
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'fail',
+      message: error.message
+    });
+  }
+};
