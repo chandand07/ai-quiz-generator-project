@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import LoginOptions from './components/LoginOptions';
 import StudentLogin from './components/StudentLogin';
@@ -12,6 +13,21 @@ import QuizDetails from './components/QuizDetails';
 import CreateQuiz from './components/CreateQuiz';
 import StudentQuiz from './components/StudentQuiz';
 
+const ProtectedRoute = ({ children, allowedRole }) => {
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('userRole');
+
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (userRole !== allowedRole) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
 function App() {
   return (
     <Router>
@@ -20,14 +36,56 @@ function App() {
         <Route path="/" element={<LoginOptions />} />
         <Route path="/student-login" element={<StudentLogin />} />
         <Route path="/student-signup" element={<StudentSignup />} />
-        <Route path="/dashboard" element={<StudentDashboard />} />
-        <Route path="/quiz-code" element={<QuizCode />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute allowedRole="student">
+              <StudentDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/quiz-code" 
+          element={
+            <ProtectedRoute allowedRole="student">
+              <QuizCode />
+            </ProtectedRoute>
+          } 
+        />
         <Route path="/educator-login" element={<EducatorLogin />} />
         <Route path="/educator-signup" element={<EducatorSignup />} />
-        <Route path="/educator-dashboard" element={<EducatorDashboard />} />
-        <Route path="/quiz-details" element={<QuizDetails />} />
-        <Route path="/create-quiz" element={<CreateQuiz />} />
-        <Route path='/student-quiz' element={<StudentQuiz/>}/>
+        <Route 
+          path="/educator-dashboard" 
+          element={
+            <ProtectedRoute allowedRole="educator">
+              <EducatorDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/quiz-details" 
+          element={
+            <ProtectedRoute allowedRole="educator">
+              <QuizDetails />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/create-quiz" 
+          element={
+            <ProtectedRoute allowedRole="educator">
+              <CreateQuiz />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path='/student-quiz' 
+          element={
+            <ProtectedRoute allowedRole="student">
+              <StudentQuiz />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );

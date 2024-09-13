@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate , Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const StudentLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rollNo, setRollNo] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -14,17 +15,18 @@ const StudentLogin = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rollNo, role: 'student' }),
       });
       const data = await response.json();
       if (response.ok) {
         localStorage.setItem('token', data.token);
+        localStorage.setItem('userRole', data.data.user.role);
         navigate('/dashboard');
       } else {
-        alert(data.message);
+        alert(data.message || 'Invalid credentials');
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Login error:', error);
       alert('An error occurred. Please try again.');
     }
   };
@@ -55,12 +57,23 @@ const StudentLogin = () => {
             required
           />
         </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Roll Number</label>
+          <input
+            type="text"
+            className="w-full p-2 border rounded"
+            placeholder="Enter roll number"
+            value={rollNo}
+            onChange={(e) => setRollNo(e.target.value)}
+            required
+          />
+        </div>
         <button type="submit" className="bg-blue-500 text-white w-full py-2 rounded hover:bg-blue-700">
           Login
         </button>
         <div className="mt-4 text-center">
-          <span>New User? </span>
-          <a href="/student-signup" className="text-blue-500">Signup Now</a>
+          <span>New Student? </span>
+          <Link to="/student-signup" className="text-blue-500">Signup Now</Link>
         </div>
       </form>
     </div>

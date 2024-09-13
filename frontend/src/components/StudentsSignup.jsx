@@ -12,27 +12,24 @@ const StudentSignup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      alert("Passwords don't match");
-      return;
-    }
     try {
       const response = await fetch('http://localhost:5000/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, rollNo, school, email, password, role: 'student' }),
+        body: JSON.stringify({ name, email, rollNo, password, role: 'student' }),
       });
       const data = await response.json();
       if (response.ok) {
-        alert(data.message);
-        navigate('/student-login');
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userRole', data.data.user.role);
+        navigate('/dashboard');
       } else {
-        alert(data.message);
+        alert(data.message || 'Signup failed');
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Signup error:', error);
       alert('An error occurred. Please try again.');
     }
   };
