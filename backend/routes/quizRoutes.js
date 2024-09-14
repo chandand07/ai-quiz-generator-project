@@ -4,10 +4,15 @@ const { generateQuiz, generateQuizFromPDF } = require('../controllers/quizContro
 const quizController = require('../controllers/quizController');
 const authController = require('../controllers/authController');
 
+
 router.post('/generate-quiz', generateQuiz);
 router.post('/generate-quiz-from-pdf', generateQuizFromPDF);
 router.post('/quiz/details', authController.protect, authController.restrictTo('educator'), quizController.createQuizDetails);
 router.post('/quiz/create', authController.protect, authController.restrictTo('educator'), quizController.createQuiz);
 router.get('/quizzes', authController.protect, authController.restrictTo('educator'), quizController.getEducatorQuizzes);
+router.get('/quiz/student-quizzes', authController.protect, quizController.getStudentQuizzes);
+router.post('/verify-code', authController.protect, quizController.verifyQuizCode);
+router.post('/submit', authController.protect, quizController.submitQuiz);
+router.get('/quiz-results', authController.protect, quizController.getQuizResults);
 
 module.exports = router;

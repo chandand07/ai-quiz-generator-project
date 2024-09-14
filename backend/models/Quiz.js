@@ -11,7 +11,18 @@ const quizSchema = new mongoose.Schema({
     question: String,
     options: [String],
     correctAnswer: String
-  }]
+  }],
+  class: { 
+    type: Number, 
+    required: true,
+    min: 4,
+    max: 12
+  },
+  section: { 
+    type: String, 
+    required: true,
+    enum: ['A', 'B', 'C', 'D']
+  },
 });
 quizSchema.index({ quizCode: 1 }, { unique: true });
 

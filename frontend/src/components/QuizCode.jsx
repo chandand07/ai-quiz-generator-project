@@ -1,23 +1,51 @@
-// src/components/QuizCode.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const QuizCode = () => {
   const [quizCode, setQuizCode] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const { quizId, subject, testDate, testTime } = location.state || {};
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-  
-    // Add logic to handle quiz submission
-    navigate('/student-quiz', { 
-      state: { 
-        quizCode, 
-        subject: 'Mathematics', 
-        testDate: '2023-06-01' 
-      } 
+  // ... other imports and code ...
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await fetch('http://localhost:5000/api/verify-code', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ quizId, quizCode })
     });
-  };
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.status === 'success') {
+      navigate('/student-quiz', { 
+        state: { 
+          quizId,
+          quizCode, 
+          subject,
+          testDate,
+          testTime,
+          questions: data.questions,
+          duration: data.duration
+        } 
+      });
+    } else {
+      alert(data.message || 'Invalid quiz code');
+    }
+  } catch (error) {
+    console.error('Error verifying quiz code:', error);
+    alert('An error occurred. Please try again.');
+  }
+};
+
+// ... rest of the component ...
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
@@ -31,6 +59,7 @@ const QuizCode = () => {
             placeholder="Enter quiz code"
             value={quizCode}
             onChange={(e) => setQuizCode(e.target.value)}
+            required
           />
         </div>
         <button type="submit" className="bg-green-500 text-white py-2 w-full rounded hover:bg-green-700">

@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const signToken = (id) => {
-  const expiresIn = process.env.JWT_EXPIRES_IN || '2h'; // Default to 2 hours if not set
+  const expiresIn = process.env.JWT_EXPIRES_IN || '2h';
   let parsedExpiresIn;
 
   if (typeof expiresIn === 'string') {
@@ -38,7 +38,9 @@ exports.signup = async (req, res) => {
       role: req.body.role,
       school: req.body.school,
       teacherId: req.body.teacherId,
-      rollNo: req.body.rollNo
+      rollNo: req.body.rollNo,
+      class: req.body.class,
+      section: req.body.section
     });
 
     const token = signToken(newUser._id);
@@ -51,7 +53,9 @@ exports.signup = async (req, res) => {
           id: newUser._id,
           name: newUser.name,
           email: newUser.email,
-          role: newUser.role
+          role: newUser.role,
+          class: newUser.class,
+          section: newUser.section
         }
       }
     });
@@ -96,7 +100,9 @@ exports.login = async (req, res) => {
           id: user._id,
           name: user.name,
           email: user.email,
-          role: user.role
+          role: user.role,
+          class: user.class,
+          section: user.section
         }
       }
     });
@@ -108,6 +114,7 @@ exports.login = async (req, res) => {
     });
   }
 };
+
 // Protect route middleware
 exports.protect = async (req, res, next) => {
   try {

@@ -7,26 +7,33 @@ const QuizDetails = () => {
   const [testDate, setTestDate] = useState('');
   const [testTime, setTestTime] = useState('');
   const [testDuration, setTestDuration] = useState('');
+  const [quizClass, setQuizClass] = useState('');
+  const [section, setSection] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const quizData = { 
+        quizCode, 
+        subject, 
+        testDate, 
+        testTime, 
+        testDuration: parseInt(testDuration),
+        class: parseInt(quizClass),
+        section
+      };
+      console.log('Sending quiz data:', quizData);
       const response = await fetch('http://localhost:5000/api/quiz/details', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ 
-          quizCode, 
-          subject, 
-          testDate, 
-          testTime, 
-          testDuration: parseInt(testDuration) 
-        }),
+        body: JSON.stringify(quizData),
       });
       const data = await response.json();
+      console.log('Response from server:', data);
       if (response.ok) {
         navigate('/create-quiz', { state: { quizId: data.quizId } });
       } else {
@@ -94,7 +101,7 @@ const QuizDetails = () => {
             required
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="testDuration">
             Test Duration (minutes)
           </label>
@@ -106,6 +113,40 @@ const QuizDetails = () => {
             onChange={(e) => setTestDuration(e.target.value)}
             required
           />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="quizClass">
+            Class
+          </label>
+          <select
+            id="quizClass"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            value={quizClass}
+            onChange={(e) => setQuizClass(e.target.value)}
+            required
+          >
+            <option value="">Select Class</option>
+            {[...Array(9)].map((_, i) => (
+              <option key={i} value={i + 4}>{i + 4}</option>
+            ))}
+          </select>
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="section">
+            Section
+          </label>
+          <select
+            id="section"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            value={section}
+            onChange={(e) => setSection(e.target.value)}
+            required
+          >
+            <option value="">Select Section</option>
+            {['A', 'B', 'C', 'D'].map((sec) => (
+              <option key={sec} value={sec}>{sec}</option>
+            ))}
+          </select>
         </div>
         <div className="flex items-center justify-between">
           <button

@@ -9,6 +9,17 @@ const userSchema = new mongoose.Schema({
   school: { type: String, required: function() { return this.role === 'educator'; } },
   teacherId: { type: String, unique: true, sparse: true, required: function() { return this.role === 'educator'; } },
   rollNo: { type: String, required: function() { return this.role === 'student'; } },
+  class: { 
+    type: Number, 
+    required: function() { return this.role === 'student'; },
+    min: 4,
+    max: 12
+  },
+  section: { 
+    type: String, 
+    required: function() { return this.role === 'student'; },
+    enum: ['A', 'B', 'C', 'D']
+  }
 });
 
 userSchema.pre('save', async function(next) {

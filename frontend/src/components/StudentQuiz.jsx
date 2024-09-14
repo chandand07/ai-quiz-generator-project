@@ -4,17 +4,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const StudentQuiz = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { quizCode, subject, testDate } = location.state || {};
+  const { quizId, quizCode, subject, testDate, testTime, questions, duration } = location.state || {};
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(10 * 60); // 10 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(duration * 60); // duration in minutes, convert to seconds
   const [selectedAnswers, setSelectedAnswers] = useState({});
 
   // Dummy data for 10 questions
-  const questions = [
-    { id: 1, question: "What is 2 + 2?", options: ["3", "4", "5", "6"] },
-    { id: 2, question: "What is the capital of France?", options: ["London", "Berlin", "Paris", "Madrid"] },
-    // ... Add 8 more questions here
-  ];
+  
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -50,11 +46,35 @@ const StudentQuiz = () => {
     }
   };
 
-  const handleSubmit = () => {
-    // Here you would typically send the answers to your backend
-    console.log('Quiz submitted:', selectedAnswers);
-    navigate('/dashboard'); // Navigate back to dashboard or results page
+  // ... other imports and code ...
+
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ quizId, answers: selectedAnswers })
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.status === 'success') {
+        alert(`Quiz submitted successfully. Your score: ${data.score}`);
+        navigate('/dashboard');
+      } else {
+        alert(data.message || 'Failed to submit quiz');
+      }
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      alert('An error occurred. Please try again.');
+    }
   };
+
+
 
   return (
     <div className="container mx-auto p-8">
