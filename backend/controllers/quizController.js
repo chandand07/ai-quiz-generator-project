@@ -15,33 +15,37 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const upload = multer({ dest: 'uploads/' });
 
 exports.generateQuiz = async (req, res) => {
-    try {
-      const { prompt } = req.body;
-      console.log('Received prompt:', prompt);
-  
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-  
-      console.log('Sending request to Gemini API');
-      const result = await model.generateContent(
-        `Generate 15 multiple-choice questions based on the following prompt: ${prompt}\n\nFormat each question as a JSON object with the following structure:\n{\n  "question": "Question text",\n  "options": ["Option A", "Option B", "Option C", "Option D"],\n  "correctOption": 0 // Index of the correct option (0-3)\n}\n\nProvide the questions as a JSON array without any markdown formatting or code blocks.`
-      );
-  
-      console.log('Received response from Gemini API');
-      const rawResponse = result.response.text();
-      console.log('Raw response:', rawResponse);
-  
-      // Remove any potential backticks or "json" tag
-      const cleanedResponse = rawResponse.replace(/```json\n?|\n?```/g, '').trim();
-      
-      const generatedQuestions = JSON.parse(cleanedResponse);
-  
-      console.log('Parsed questions:', generatedQuestions);
-  
-      res.json({ questions: generatedQuestions });
-    } catch (error) {
-      console.error('Error in generateQuiz:', error);
-      res.status(500).json({ message: 'Failed to generate quiz', error: error.toString() });
+  try {
+    const { numberOfQuestions, difficultyLevel, testDuration, prompt } = req.body;
+
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const result = await model.generateContent(
+      `Generate exactly ${numberOfQuestions} multiple-choice questions with difficulty level ${difficultyLevel} for a ${testDuration}-minute test based on the following prompt: ${prompt}\n\nFormat each question as a JSON object with the following structure:\n{\n  "question": "Question text",\n  "options": ["Option A", "Option B", "Option C", "Option D"],\n  "correctOption": 0 // Index of the correct option (0-3)\n}\n\nProvide the questions as a JSON array without any markdown formatting or code blocks. Do not generate more or less than ${numberOfQuestions} questions.`
+    );
+
+    const rawResponse = result.response.text();
+    const cleanedResponse = rawResponse.replace(/```json\n?|\n?```/g, '').trim();
+    let generatedQuestions = JSON.parse(cleanedResponse);
+
+    // Strictly enforce the number of questions
+    if (generatedQuestions.length > parseInt(numberOfQuestions)) {
+      generatedQuestions = generatedQuestions.slice(0, parseInt(numberOfQuestions));
+    } else if (generatedQuestions.length < parseInt(numberOfQuestions)) {
+      while (generatedQuestions.length < parseInt(numberOfQuestions)) {
+        generatedQuestions.push({
+          question: "Placeholder question",
+          options: ["Option A", "Option B", "Option C", "Option D"],
+          correctOption: 0
+        });
+      }
     }
+
+    res.json({ questions: generatedQuestions });
+  } catch (error) {
+    console.error('Error in generateQuiz:', error);
+    res.status(500).json({ message: 'Failed to generate quiz', error: error.toString() });
+  }
 };
 
 exports.generateQuizFromPDF = [
@@ -52,12 +56,13 @@ exports.generateQuizFromPDF = [
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
+      const { numberOfQuestions, difficultyLevel, testDuration } = req.body;
       const pdfContent = fs.readFileSync(req.file.path, { encoding: 'base64' });
 
       const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
 
       const result = await model.generateContent([
-        "Generate 15 multiple-choice questions based on the content of this PDF. Format each question as a JSON object with the following structure: { 'question': 'Question text', 'options': ['Option A', 'Option B', 'Option C', 'Option D'], 'correctOption': 0 } Provide the questions as a JSON array without any markdown formatting or code blocks.",
+        `Generate ${numberOfQuestions} multiple-choice questions with difficulty level ${difficultyLevel} for a ${testDuration}-minute test based on the content of this PDF. Format each question as a JSON object with the following structure: { 'question': 'Question text', 'options': ['Option A', 'Option B', 'Option C', 'Option D'], 'correctOption': 0 } Provide the questions as a JSON array without any markdown formatting or code blocks.`,
         {
           inlineData: {
             mimeType: "application/pdf",
@@ -68,7 +73,10 @@ exports.generateQuizFromPDF = [
 
       const rawResponse = result.response.text();
       const cleanedResponse = rawResponse.replace(/```json\n?|\n?```/g, '').trim();
-      const generatedQuestions = JSON.parse(cleanedResponse);
+      let generatedQuestions = JSON.parse(cleanedResponse);
+
+      // Ensure we only return the requested number of questions
+      generatedQuestions = generatedQuestions.slice(0, parseInt(numberOfQuestions));
 
       // Clean up the uploaded file
       fs.unlinkSync(req.file.path);
@@ -159,39 +167,6 @@ exports.getEducatorQuizzes = async (req, res) => {
 };
 
 
-// ... rest of the file ...
-
-exports.getStudentQuizzes = async (req, res) => {
-  try {
-    const student = await User.findById(req.user._id);
-    if (!student) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'Student not found'
-      });
-    }
-
-    const quizzes = await Quiz.find({
-      class: student.class,
-      section: student.section
-    })
-    .select('quizCode subject testDate testTime testDuration')
-    .sort({ testDate: 1, testTime: 1 });
-
-    res.status(200).json({
-      status: 'success',
-      quizzes
-    });
-  } catch (error) {
-    console.error('Error in getStudentQuizzes:', error);
-    res.status(400).json({
-      status: 'fail',
-      message: error.message
-    });
-  }
-};
-// ... (previous code)
-
 exports.verifyQuizCode = async (req, res) => {
   try {
     const { quizId, quizCode } = req.body;
@@ -220,6 +195,12 @@ exports.verifyQuizCode = async (req, res) => {
       return res.status(400).json({ status: 'fail', message: 'The quiz has ended' });
     }
 
+    // Check if the student has already attempted this quiz
+    const existingResult = await Result.findOne({ student: req.user._id, quiz: quizId });
+    if (existingResult) {
+      return res.status(400).json({ status: 'fail', message: 'You have already attempted this quiz' });
+    }
+
     res.status(200).json({
       status: 'success',
       questions: quiz.questions,
@@ -230,66 +211,103 @@ exports.verifyQuizCode = async (req, res) => {
     res.status(400).json({ status: 'fail', message: error.message });
   }
 };
+
 exports.submitQuiz = async (req, res) => {
   try {
     const { quizId, answers } = req.body;
-    console.log('Received quiz submission:', { quizId, answers });
-
-    if (!quizId || !answers) {
-      return res.status(400).json({ status: 'fail', message: 'Missing quizId or answers' });
-    }
-
-    const student = await User.findById(req.user._id);
-    if (!student) {
-      return res.status(400).json({ status: 'fail', message: 'Student not found' });
-    }
+    const studentId = req.user._id;
 
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
-      return res.status(400).json({ status: 'fail', message: 'Quiz not found' });
+      return res.status(404).json({ status: 'fail', message: 'Quiz not found' });
     }
 
     // Calculate score
     let score = 0;
     quiz.questions.forEach((question, index) => {
-      if (answers[index] === question.correctAnswer) {
+      const studentAnswer = answers[index];
+      const correctAnswerIndex = question.options.indexOf(question.correctAnswer);
+      if (studentAnswer === correctAnswerIndex) {
         score++;
       }
     });
 
-    // Save the result
-    const result = await Result.create({
-      student: student._id,
+    // Create new result
+    const result = new Result({
+      student: studentId,
       quiz: quizId,
       score,
-      answers
+      totalQuestions: quiz.questions.length,
+      answers,
     });
 
-    console.log('Quiz result saved:', result);
+    await result.save();
 
-    res.status(200).json({ status: 'success', message: 'Quiz submitted successfully', score });
+    // Update the quiz to mark it as attempted for this student
+    await Quiz.findByIdAndUpdate(quizId, { $addToSet: { attemptedBy: studentId } });
+
+    res.json({ status: 'success', score, totalQuestions: quiz.questions.length });
   } catch (error) {
-    console.error('Error in submitQuiz:', error);
-    res.status(400).json({ status: 'fail', message: error.message });
+    console.error('Error submitting quiz:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to submit quiz' });
   }
 };
+
+exports.getStudentQuizzes = async (req, res) => {
+  try {
+    const studentId = req.user._id;
+    const now = new Date();
+
+    const quizzes = await Quiz.find({
+      class: req.user.class,
+      section: req.user.section,
+      attemptedBy: { $ne: studentId }, // Exclude quizzes already attempted by this student
+      $or: [
+        { testDate: { $gt: now } },
+        {
+          testDate: { $eq: now.toISOString().split('T')[0] },
+          testTime: { $gte: now.toTimeString().split(' ')[0] }
+        }
+      ]
+    }).lean();
+
+    const processedQuizzes = quizzes.map(quiz => {
+      const quizEndTime = new Date(quiz.testDate);
+      const [hours, minutes] = quiz.testTime.split(':');
+      quizEndTime.setHours(parseInt(hours, 10), parseInt(minutes, 10) + quiz.testDuration);
+
+      return {
+        ...quiz,
+        ended: quizEndTime < now
+      };
+    });
+
+    res.json({ status: 'success', quizzes: processedQuizzes });
+  } catch (error) {
+    console.error('Error fetching student quizzes:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to fetch quizzes' });
+  }
+};
+
+// ... other controller methods ...
 exports.getQuizResults = async (req, res) => {
   try {
-    const results = await Result.find({ student: req.user._id })
-      .populate('quiz', 'subject testDate')
-      .sort('-submittedAt');
+    const { quizId } = req.params;
+    const results = await Result.find({ quiz: quizId })
+      .populate('student', 'name')
+      .populate('quiz', 'subject');
 
-    res.status(200).json({
-      status: 'success',
-      results: results.map(result => ({
-        subject: result.quiz.subject,
-        testDate: result.quiz.testDate,
-        score: result.score,
-        submittedAt: result.submittedAt
-      }))
-    });
+    const formattedResults = results.map(result => ({
+      _id: result._id,
+      studentName: result.student.name,
+      subject: result.quiz.subject,
+      score: result.score,
+      totalQuestions: result.totalQuestions
+    }));
+
+    res.json({ status: 'success', results: formattedResults });
   } catch (error) {
-    console.error('Error in getQuizResults:', error);
-    res.status(400).json({ status: 'fail', message: error.message });
+    console.error('Error fetching quiz results:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to fetch quiz results' });
   }
 };

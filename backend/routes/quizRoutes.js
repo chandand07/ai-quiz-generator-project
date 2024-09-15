@@ -3,6 +3,8 @@ const router = express.Router();
 const { generateQuiz, generateQuizFromPDF } = require('../controllers/quizController');
 const quizController = require('../controllers/quizController');
 const authController = require('../controllers/authController');
+const authMiddleware = require('../middleware/authMiddleware');
+
 
 
 router.post('/generate-quiz', generateQuiz);
@@ -14,5 +16,5 @@ router.get('/quiz/student-quizzes', authController.protect, quizController.getSt
 router.post('/verify-code', authController.protect, quizController.verifyQuizCode);
 router.post('/submit', authController.protect, quizController.submitQuiz);
 router.get('/quiz-results', authController.protect, quizController.getQuizResults);
-
+router.get('/:quizId/results', authController.protect, quizController.getQuizResults);
 module.exports = router;

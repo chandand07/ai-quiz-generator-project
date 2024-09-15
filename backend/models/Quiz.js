@@ -23,6 +23,10 @@ const quizSchema = new mongoose.Schema({
     required: true,
     enum: ['A', 'B', 'C', 'D']
   },
+  attemptedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
 });
 quizSchema.index({ quizCode: 1 }, { unique: true });
 
