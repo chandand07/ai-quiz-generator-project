@@ -11,7 +11,6 @@ const QuizDetails = () => {
   const [section, setSection] = useState('');
   const navigate = useNavigate();
 
-  // ... (previous imports and code)
 
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -40,7 +39,7 @@ const handleSubmit = async (e) => {
       navigate('/create-quiz', { 
         state: { 
           quizId: data.quizId,
-          quizDetails: quizData // Pass the quiz details to the next page
+          quizDetails: quizData 
         } 
       });
     } else {

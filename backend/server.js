@@ -8,17 +8,16 @@ const quizRoutes = require('./routes/quizRoutes');
 
 const app = express();
 
-// Connect to database
 connectDB();
 
-// Middleware
+
 app.use(cors({
-    origin: 'http://127.0.0.1:5173', // Update this to match your frontend URL
+    origin: 'http://127.0.0.1:5173', 
     credentials: true
   }));
 app.use(express.json());
 
-// Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api', quizRoutes);
 app.use('/api/quiz', quizRoutes);

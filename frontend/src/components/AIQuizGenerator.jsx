@@ -58,7 +58,6 @@ const AIQuizGenerator = ({ onQuestionsGenerated, params }) => {
 
     const formData = new FormData();
     formData.append('file', file);
-    // Append other params to formData
     Object.keys(params).forEach(key => {
       formData.append(key, params[key]);
     });

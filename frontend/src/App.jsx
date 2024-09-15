@@ -65,6 +65,7 @@ function App() {
         />
         <Route 
           path="/quiz-details" 
+          
           element={
             <ProtectedRoute allowedRole="educator">
               <QuizDetails />

@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 const multer = require('multer');
 const fs = require('fs');
 const Quiz = require('../models/Quiz');
-const User = require('../models/User'); // Add this line
+const User = require('../models/User'); 
 const Result = require('../models/Result');
 
 
@@ -28,7 +28,7 @@ exports.generateQuiz = async (req, res) => {
     const cleanedResponse = rawResponse.replace(/```json\n?|\n?```/g, '').trim();
     let generatedQuestions = JSON.parse(cleanedResponse);
 
-    // Strictly enforce the number of questions
+    
     if (generatedQuestions.length > parseInt(numberOfQuestions)) {
       generatedQuestions = generatedQuestions.slice(0, parseInt(numberOfQuestions));
     } else if (generatedQuestions.length < parseInt(numberOfQuestions)) {
@@ -75,10 +75,10 @@ exports.generateQuizFromPDF = [
       const cleanedResponse = rawResponse.replace(/```json\n?|\n?```/g, '').trim();
       let generatedQuestions = JSON.parse(cleanedResponse);
 
-      // Ensure we only return the requested number of questions
+      
       generatedQuestions = generatedQuestions.slice(0, parseInt(numberOfQuestions));
 
-      // Clean up the uploaded file
+      
       fs.unlinkSync(req.file.path);
 
       res.json({ questions: generatedQuestions });
@@ -99,7 +99,7 @@ exports.createQuizDetails = async (req, res) => {
       testDate,
       testTime,
       testDuration: parseInt(testDuration),
-      class: parseInt(quizClass), // Ensure class is saved as a number
+      class: parseInt(quizClass), 
       section,
       creator: req.user._id
     });
@@ -183,17 +183,17 @@ exports.verifyQuizCode = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Quiz not found' });
     }
 
-    // Check if the student is allowed to take this quiz
+    
     if (quiz.class !== req.user.class || quiz.section !== req.user.section) {
       return res.status(403).json({ status: 'error', message: 'You are not authorized to take this quiz' });
     }
 
-    // Check if the quiz has already been attempted by this student
+    
     if (quiz.attemptedBy.includes(studentId)) {
       return res.status(400).json({ status: 'error', message: 'You have already attempted this quiz' });
     }
 
-    // Check if the quiz is currently active
+    
     const now = new Date();
     const quizStartTime = new Date(`${quiz.testDate}T${quiz.testTime}`);
     const quizEndTime = new Date(quizStartTime.getTime() + quiz.testDuration * 60000);
@@ -223,7 +223,7 @@ exports.submitQuiz = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Quiz not found' });
     }
 
-    // Calculate score
+
     let score = 0;
     quiz.questions.forEach((question, index) => {
       if (answers[index] === question.correctAnswer) {
@@ -231,7 +231,7 @@ exports.submitQuiz = async (req, res) => {
       }
     });
 
-    // Create new Result document
+    
     const result = await Result.create({
       student: studentId,
       quiz: quizId,
@@ -240,7 +240,7 @@ exports.submitQuiz = async (req, res) => {
       answers: answers
     });
 
-    // Update Quiz model to mark as attempted by this student
+    
     await Quiz.findByIdAndUpdate(quizId, { $addToSet: { attemptedBy: studentId } });
 
     res.json({ 
@@ -287,7 +287,7 @@ exports.getStudentQuizzes = async (req, res) => {
     const quizzes = await Quiz.find({
       class: req.user.class,
       section: req.user.section,
-      attemptedBy: { $ne: studentId }, // Exclude quizzes already attempted by this student
+      attemptedBy: { $ne: studentId },
       $or: [
         { testDate: { $gt: now } },
         {
@@ -315,7 +315,6 @@ exports.getStudentQuizzes = async (req, res) => {
   }
 };
 
-// ... other controller methods ...
 exports.getQuizResults = async (req, res) => {
   try {
     const { quizId } = req.params;

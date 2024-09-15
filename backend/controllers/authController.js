@@ -21,7 +21,7 @@ const signToken = (id) => {
 
   if (isNaN(parsedExpiresIn)) {
     console.error('Invalid JWT_EXPIRES_IN value:', expiresIn);
-    parsedExpiresIn = 2 * 60 * 60; // Default to 2 hours if parsing fails
+    parsedExpiresIn = 2 * 60 * 60; 
   }
 
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -115,7 +115,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// Protect route middleware
+
 exports.protect = async (req, res, next) => {
   try {
     let token;
@@ -130,10 +130,9 @@ exports.protect = async (req, res, next) => {
       });
     }
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Check if user still exists
+   
     const currentUser = await User.findById(decoded.id);
 
     if (!currentUser) {
@@ -143,7 +142,7 @@ exports.protect = async (req, res, next) => {
       });
     }
 
-    // Grant access to protected route
+    
     req.user = currentUser;
     next();
   } catch (err) {
@@ -154,7 +153,7 @@ exports.protect = async (req, res, next) => {
   }
 };
 
-// Restrict to role middleware
+
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {

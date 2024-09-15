@@ -35,7 +35,6 @@ const StudentDashboard = () => {
         setLoading(false);
       }
     };
-
     const fetchQuizResults = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/student-quiz-results', {
@@ -59,22 +58,27 @@ const StudentDashboard = () => {
 
     fetchQuizzes();
     fetchQuizResults();
+    checkUpcomingTests();
 
-    // Set up a timer to check for upcoming tests every minute
+    
     const timer = setInterval(checkUpcomingTests, 60000);
 
-    // Clean up the timer when the component unmounts
+    
     return () => clearInterval(timer);
   }, [location.state?.quizSubmitted]);
 
   const checkUpcomingTests = () => {
     const now = new Date();
     upcomingTests.forEach(test => {
-      const testDateTime = new Date(`${test.testDate}T${test.testTime}`);
-      const timeDiff = testDateTime.getTime() - now.getTime();
-
-      if (timeDiff > 0 && timeDiff <= 60000) { // If the test starts within the next minute
-        alert(`Your test "${test.subject}" is starting now!`);
+      const testDate = new Date(test.testDate);
+      const [hours, minutes] = test.testTime.split(':');
+      const testStartTime = new Date(testDate.getFullYear(), testDate.getMonth(), testDate.getDate(), parseInt(hours), parseInt(minutes));
+      const timeDiff = testStartTime.getTime() - now.getTime();
+  
+      if (timeDiff > 0 && timeDiff <= 60000) { 
+        alert(`Your test "${test.subject}" is starting in 1 minute!`);
+      } else if (timeDiff <= 0 && timeDiff > -60000) { 
+        alert(`Your test "${test.subject}" has started!`);
         handleTakeTest(test);
       }
     });
@@ -86,24 +90,12 @@ const StudentDashboard = () => {
     const [hours, minutes] = test.testTime.split(':');
     const testStartTime = new Date(testDate.getFullYear(), testDate.getMonth(), testDate.getDate(), parseInt(hours), parseInt(minutes));
     const testEndTime = new Date(testStartTime.getTime() + test.testDuration * 60000);
-
+  
     if (now < testStartTime) {
       alert(`The test hasn't started yet. It will begin at ${testStartTime.toLocaleString()}.`);
     } else if (now > testEndTime) {
       alert('The test has already ended.');
-    }
-    else if (timeDiffStart <= 60000) { // If within 1 minute of start time
-      alert('The test has started. Good luck!');
-      navigate('/quiz-code', { 
-        state: { 
-          quizId: test._id,
-          subject: test.subject,
-          testDate: test.testDate,
-          testTime: test.testTime
-        } 
-      });
-    }
-     else {
+    } else {
       navigate('/quiz-code', { 
         state: { 
           quizId: test._id,
@@ -160,8 +152,6 @@ const StudentDashboard = () => {
       ) : (
         <p className="text-center mt-4">No upcoming tests available.</p>
       )}
-
-      {/* Test Results Table */}
       <h2 className="text-2xl font-bold mb-4">Test Results</h2>
       {quizResults.length > 0 ? (
         <table className="min-w-full bg-white shadow-md rounded-lg">

@@ -6,10 +6,9 @@ const StudentQuiz = () => {
   const navigate = useNavigate();
   const { quizId, quizCode, subject, testDate, testTime, questions, duration } = location.state || {};
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(duration * 60); // duration in minutes, convert to seconds
+  const [timeLeft, setTimeLeft] = useState(duration * 60); 
   const [selectedAnswers, setSelectedAnswers] = useState({});
 
-  // Dummy data for 10 questions
   
 
   useEffect(() => {
@@ -46,7 +45,7 @@ const StudentQuiz = () => {
     }
   };
 
-  // ... other imports and code ...
+  
 
   const handleSubmit = async () => {
     try {
