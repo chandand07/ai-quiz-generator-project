@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link , useNavigate} from 'react-router-dom';
 
 const EducatorDashboard = () => {
   const [quizzes, setQuizzes] = useState([]);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchQuizzes();
@@ -26,17 +28,8 @@ const EducatorDashboard = () => {
     }
   };
 
-  const handleShowResults = (quiz) => {
-    const quizEndTime = new Date(quiz.testDate + 'T' + quiz.testTime);
-    quizEndTime.setMinutes(quizEndTime.getMinutes() + quiz.testDuration);
-    
-    if (new Date() < quizEndTime) {
-      alert('The quiz has not completed yet. Results are not available.');
-    } else {
-      // Navigate to results page or show results modal
-      alert('Showing results for quiz: ' + quiz.quizCode);
-      // You can implement the actual results display logic here
-    }
+  const handleShowResults = (quizId) => {
+    navigate(`/quiz-results/${quizId}`);
   };
 
   return (
@@ -70,7 +63,7 @@ const EducatorDashboard = () => {
               <td className="py-2 px-4 border">
                 <button 
                   className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
-                  onClick={() => handleShowResults(quiz)}
+                  onClick={() => handleShowResults(quiz._id)}
                 >
                   Show Results
                 </button>

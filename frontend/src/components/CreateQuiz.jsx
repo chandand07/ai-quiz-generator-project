@@ -5,13 +5,19 @@ import AIQuizGenerator from './AIQuizGenerator';
 const CreateQuiz = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { quizId, quizCode, subject, testDate, testTime, testDuration } = location.state || {};
+  const { quizId, quizDetails } = location.state || {};
   const [aiQuestions, setAiQuestions] = useState([]);
   const [manualQuestions, setManualQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState({
     question: '',
     options: ['', '', '', ''],
     correctOption: '',
+  });
+  const [aiGeneratorParams, setAiGeneratorParams] = useState({
+    numberOfQuestions: '',
+    difficultyLevel: '',
+    testDuration: '',
+    prompt: '',
   });
 
   useEffect(() => {
@@ -20,8 +26,18 @@ const CreateQuiz = () => {
     }
   }, [quizId, navigate]);
 
+  const handleAIParamChange = (e) => {
+    const { name, value } = e.target;
+    setAiGeneratorParams(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleQuestionChange = (e) => {
     setCurrentQuestion({ ...currentQuestion, question: e.target.value });
+  };
+  
+  const addAIQuestionToManual = (question) => {
+    setManualQuestions([...manualQuestions, question]);
+    setAiQuestions(aiQuestions.filter(q => q !== question));
   };
 
   const handleOptionChange = (index, value) => {
@@ -98,9 +114,75 @@ const CreateQuiz = () => {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-6">Create Quiz</h1>
+      
+      {/* Display Quiz Details */}
+      {quizDetails && (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-bold mb-4">Quiz Details</h2>
+          <p>Quiz Code: {quizDetails.quizCode}</p>
+          <p>Subject: {quizDetails.subject}</p>
+          <p>Test Date: {quizDetails.testDate}</p>
+          <p>Test Time: {quizDetails.testTime}</p>
+          <p>Test Duration: {quizDetails.testDuration} minutes</p>
+          <p>Class: {quizDetails.class}</p>
+          <p>Section: {quizDetails.section}</p>
+        </div>
+      )}
+      
       <div className="flex flex-col md:flex-row">
         <div className="w-full md:w-1/2 pr-0 md:pr-4 mb-8 md:mb-0">
-          <AIQuizGenerator onQuestionsGenerated={(generatedQuestions) => setAiQuestions(generatedQuestions)} />
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 className="text-xl font-bold mb-4">AI Quiz Generator Parameters</h2>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Number of Questions</label>
+              <input
+                type="number"
+                name="numberOfQuestions"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                value={aiGeneratorParams.numberOfQuestions}
+                onChange={handleAIParamChange}
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Difficulty Level</label>
+              <select
+                name="difficultyLevel"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                value={aiGeneratorParams.difficultyLevel}
+                onChange={handleAIParamChange}
+              >
+                <option value="">Select Difficulty</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Test Duration (minutes)</label>
+              <input
+                type="number"
+                name="testDuration"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                value={aiGeneratorParams.testDuration}
+                onChange={handleAIParamChange}
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">Prompt</label>
+              <textarea
+                name="prompt"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                value={aiGeneratorParams.prompt}
+                onChange={handleAIParamChange}
+                rows="4"
+              ></textarea>
+            </div>
+          </div>
+          
+          <AIQuizGenerator 
+            onQuestionsGenerated={(generatedQuestions) => setAiQuestions(generatedQuestions)}
+            params={aiGeneratorParams}
+          />
           
           <div className="bg-white rounded-lg shadow-md p-6 mt-8">
             <h2 className="text-xl font-bold mb-4">AI Generated Questions</h2>
@@ -115,27 +197,26 @@ const CreateQuiz = () => {
                     </li>
                   ))}
                 </ol>
-                <button
-                  onClick={() => removeAIQuestion(index)}
-                  className="mt-2 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
-                >
-                  Remove
-                </button>
+                <div className="mt-2">
+                  <button
+                    onClick={() => removeAIQuestion(index)}
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm mr-2"
+                  >
+                    Remove
+                  </button>
+                  <button
+                    onClick={() => addAIQuestionToManual(q)}
+                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded text-sm"
+                  >
+                    Add Question
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
         <div className="w-full md:w-1/2 pl-0 md:pl-4">
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-xl font-bold mb-4">Quiz Details</h2>
-            <p>Quiz Code: {quizCode}</p>
-            <p>Subject: {subject}</p>
-            <p>Test Date: {testDate}</p>
-            <p>Test Time: {testTime}</p>
-            <p>Test Duration: {testDuration} minutes</p>
-          </div>
-
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 className="text-xl font-bold mb-4">Add New Question</h2>
             <div className="mb-4">

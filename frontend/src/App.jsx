@@ -12,6 +12,7 @@ import EducatorDashboard from './components/EducatorDashboard';
 import QuizDetails from './components/QuizDetails';
 import CreateQuiz from './components/CreateQuiz';
 import StudentQuiz from './components/StudentQuiz';
+import QuizResults from './components/QuizResults';
 
 const ProtectedRoute = ({ children, allowedRole }) => {
   const token = localStorage.getItem('token');
@@ -86,6 +87,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/quiz-results/:quizId" element={<QuizResults />} />
       </Routes>
     </Router>
   );

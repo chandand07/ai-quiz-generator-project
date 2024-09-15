@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 
-const AIQuizGenerator = ({ onQuestionsGenerated }) => {
-  const [prompt, setPrompt] = useState('');
+const AIQuizGenerator = ({ onQuestionsGenerated, params }) => {
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -10,13 +9,14 @@ const AIQuizGenerator = ({ onQuestionsGenerated }) => {
     setIsLoading(true);
 
     try {
-      console.log('Sending prompt:', prompt);
+      console.log('Sending AI generator params:', params);
       const response = await fetch('http://localhost:5000/api/generate-quiz', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify(params),
       });
 
       console.log('Response status:', response.status);
@@ -58,6 +58,10 @@ const AIQuizGenerator = ({ onQuestionsGenerated }) => {
 
     const formData = new FormData();
     formData.append('file', file);
+    // Append other params to formData
+    Object.keys(params).forEach(key => {
+      formData.append(key, params[key]);
+    });
 
     try {
       const response = await fetch('http://localhost:5000/api/generate-quiz-from-pdf', {
@@ -94,18 +98,10 @@ const AIQuizGenerator = ({ onQuestionsGenerated }) => {
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-bold mb-4">AI Quiz Generator</h2>
       <form onSubmit={handlePromptSubmit}>
-        <textarea
-          className="w-full p-2 border rounded mb-4"
-          rows="4"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Enter your prompt for quiz generation..."
-          required
-        />
         <button
           type="submit"
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2"
-          disabled={isLoading}
+          disabled={isLoading || !params.prompt}
         >
           {isLoading ? 'Generating...' : 'Generate Quiz from Prompt'}
         </button>
@@ -120,7 +116,7 @@ const AIQuizGenerator = ({ onQuestionsGenerated }) => {
         <button
           type="submit"
           className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          disabled={isLoading}
+          disabled={isLoading || !file}
         >
           {isLoading ? 'Generating...' : 'Generate Quiz from PDF'}
         </button>

@@ -63,8 +63,8 @@ const StudentQuiz = () => {
       }
       const data = await response.json();
       if (data.status === 'success') {
-        alert(`Quiz submitted successfully. Your score: ${data.score}`);
-        navigate('/dashboard');
+        alert(`Quiz submitted successfully. Your score: ${data.score}/${data.totalQuestions}`);
+        navigate('/dashboard', { state: { quizSubmitted: true } });
       } else {
         alert(data.message || 'Failed to submit quiz');
       }
@@ -73,7 +73,6 @@ const StudentQuiz = () => {
       alert('An error occurred. Please try again.');
     }
   };
-
 
 
   return (

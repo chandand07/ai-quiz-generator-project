@@ -11,39 +11,47 @@ const QuizDetails = () => {
   const [section, setSection] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const quizData = { 
-        quizCode, 
-        subject, 
-        testDate, 
-        testTime, 
-        testDuration: parseInt(testDuration),
-        class: parseInt(quizClass),
-        section
-      };
-      console.log('Sending quiz data:', quizData);
-      const response = await fetch('http://localhost:5000/api/quiz/details', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(quizData),
+  // ... (previous imports and code)
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const quizData = { 
+      quizCode, 
+      subject, 
+      testDate, 
+      testTime, 
+      testDuration: parseInt(testDuration),
+      class: parseInt(quizClass),
+      section
+    };
+    console.log('Sending quiz data:', quizData);
+    const response = await fetch('http://localhost:5000/api/quiz/details', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(quizData),
+    });
+    const data = await response.json();
+    console.log('Response from server:', data);
+    if (response.ok) {
+      navigate('/create-quiz', { 
+        state: { 
+          quizId: data.quizId,
+          quizDetails: quizData // Pass the quiz details to the next page
+        } 
       });
-      const data = await response.json();
-      console.log('Response from server:', data);
-      if (response.ok) {
-        navigate('/create-quiz', { state: { quizId: data.quizId } });
-      } else {
-        throw new Error(data.message || 'Failed to save quiz details');
-      }
-    } catch (error) {
-      console.error('Error saving quiz details:', error);
-      alert(error.message || 'An error occurred. Please try again.');
+    } else {
+      throw new Error(data.message || 'Failed to save quiz details');
     }
-  };
+  } catch (error) {
+    console.error('Error saving quiz details:', error);
+    alert(error.message || 'An error occurred. Please try again.');
+  }
+};
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">

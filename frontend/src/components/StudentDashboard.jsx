@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate , useLocation} from 'react-router-dom';
 
 const StudentDashboard = () => {
   const [upcomingTests, setUpcomingTests] = useState([]);
@@ -8,6 +8,7 @@ const StudentDashboard = () => {
   const [error, setError] = useState(null);
   const [quizResults, setQuizResults] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -22,7 +23,7 @@ const StudentDashboard = () => {
         }
         const data = await response.json();
         if (data.status === 'success') {
-          sortQuizzes(data.quizzes);
+          setUpcomingTests(data.quizzes.filter(quiz => !quiz.attempted && !quiz.ended));
         } else {
           setError(data.message || 'Failed to fetch quizzes');
         }
@@ -34,6 +35,7 @@ const StudentDashboard = () => {
       }
     };
 
+    
     const fetchQuizResults = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/quiz-results', {
@@ -57,7 +59,7 @@ const StudentDashboard = () => {
 
     fetchQuizzes();
     fetchQuizResults();
-  }, []);
+  }, [location.state?.quizSubmitted]);
 
   const sortQuizzes = (quizzes) => {
     const now = new Date();
@@ -69,7 +71,7 @@ const StudentDashboard = () => {
       const [hours, minutes] = quiz.testTime.split(':');
       quizEndTime.setHours(parseInt(hours, 10), parseInt(minutes, 10) + quiz.testDuration);
 
-      if (quizEndTime > now) {
+      if (quizEndTime > now && !quiz.attempted) {
         upcoming.push(quiz);
       } else {
         past.push(quiz);
@@ -81,15 +83,28 @@ const StudentDashboard = () => {
   };
 
   const handleTakeTest = (test) => {
-    navigate('/quiz-code', { 
-      state: { 
-        quizId: test._id,
-        subject: test.subject,
-        testDate: test.testDate,
-        testTime: test.testTime
-      } 
-    });
+    const now = new Date();
+    const testDate = new Date(test.testDate);
+    const [hours, minutes] = test.testTime.split(':');
+    const testStartTime = new Date(testDate.getFullYear(), testDate.getMonth(), testDate.getDate(), parseInt(hours), parseInt(minutes));
+    const testEndTime = new Date(testStartTime.getTime() + test.testDuration * 60000);
+
+    if (now < testStartTime) {
+      alert(`The test hasn't started yet. It will begin at ${testStartTime.toLocaleString()}.`);
+    } else if (now > testEndTime) {
+      alert('The test has already ended.');
+    } else {
+      navigate('/quiz-code', { 
+        state: { 
+          quizId: test._id,
+          subject: test.subject,
+          testDate: test.testDate,
+          testTime: test.testTime
+        } 
+      });
+    }
   };
+
   const handleSubmit = async () => {
     try {
       console.log('Submitting quiz:', { quizId, answers: selectedAnswers });
@@ -150,9 +165,9 @@ const StudentDashboard = () => {
                 <td className="py-2 px-4 border">{test.subject}</td>
                 <td className="py-2 px-4 border">{test.testTime}</td>
                 <td className="py-2 px-4 border">
-                  <button
+                <button
                     onClick={() => handleTakeTest(test)}
-                    className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-700"
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded"
                   >
                     Take Test
                   </button>
