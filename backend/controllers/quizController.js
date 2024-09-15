@@ -169,46 +169,47 @@ exports.getEducatorQuizzes = async (req, res) => {
 
 exports.verifyQuizCode = async (req, res) => {
   try {
-    const { quizId, quizCode } = req.body;
-    console.log('Verifying quiz code:', quizId, quizCode); // Add this line for debugging
+    const { quizCode, quizId } = req.body;
+    const studentId = req.user._id;
 
-    const student = await User.findById(req.user._id);
-    const quiz = await Quiz.findOne({ _id: quizId, quizCode });
+    let query = { quizCode };
+    if (quizId) {
+      query._id = quizId;
+    }
+
+    const quiz = await Quiz.findOne(query);
 
     if (!quiz) {
-      return res.status(400).json({ status: 'fail', message: 'Invalid quiz code' });
+      return res.status(404).json({ status: 'error', message: 'Quiz not found' });
     }
 
-    if (quiz.class !== student.class || quiz.section !== student.section) {
-      return res.status(400).json({ status: 'fail', message: 'This quiz is not for your class/section' });
+    // Check if the student is allowed to take this quiz
+    if (quiz.class !== req.user.class || quiz.section !== req.user.section) {
+      return res.status(403).json({ status: 'error', message: 'You are not authorized to take this quiz' });
     }
 
-    const currentTime = new Date();
-    const quizStartTime = new Date(quiz.testDate + 'T' + quiz.testTime);
+    // Check if the quiz has already been attempted by this student
+    if (quiz.attemptedBy.includes(studentId)) {
+      return res.status(400).json({ status: 'error', message: 'You have already attempted this quiz' });
+    }
+
+    // Check if the quiz is currently active
+    const now = new Date();
+    const quizStartTime = new Date(`${quiz.testDate}T${quiz.testTime}`);
     const quizEndTime = new Date(quizStartTime.getTime() + quiz.testDuration * 60000);
 
-    if (currentTime < quizStartTime) {
-      return res.status(400).json({ status: 'fail', message: 'The quiz has not started yet' });
+    if (now < quizStartTime) {
+      return res.status(400).json({ status: 'error', message: 'The quiz has not started yet' });
     }
 
-    if (currentTime > quizEndTime) {
-      return res.status(400).json({ status: 'fail', message: 'The quiz has ended' });
+    if (now > quizEndTime) {
+      return res.status(400).json({ status: 'error', message: 'The quiz has already ended' });
     }
 
-    // Check if the student has already attempted this quiz
-    const existingResult = await Result.findOne({ student: req.user._id, quiz: quizId });
-    if (existingResult) {
-      return res.status(400).json({ status: 'fail', message: 'You have already attempted this quiz' });
-    }
-
-    res.status(200).json({
-      status: 'success',
-      questions: quiz.questions,
-      duration: quiz.testDuration
-    });
+    res.json({ status: 'success', quiz: quiz });
   } catch (error) {
-    console.error('Error in verifyQuizCode:', error); // Add this line for debugging
-    res.status(400).json({ status: 'fail', message: error.message });
+    console.error('Error verifying quiz code:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to verify quiz code' });
   }
 };
 
@@ -219,37 +220,62 @@ exports.submitQuiz = async (req, res) => {
 
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
-      return res.status(404).json({ status: 'fail', message: 'Quiz not found' });
+      return res.status(404).json({ status: 'error', message: 'Quiz not found' });
     }
 
     // Calculate score
     let score = 0;
     quiz.questions.forEach((question, index) => {
-      const studentAnswer = answers[index];
-      const correctAnswerIndex = question.options.indexOf(question.correctAnswer);
-      if (studentAnswer === correctAnswerIndex) {
+      if (answers[index] === question.correctAnswer) {
         score++;
       }
     });
 
-    // Create new result
-    const result = new Result({
+    // Create new Result document
+    const result = await Result.create({
       student: studentId,
       quiz: quizId,
-      score,
+      score: score,
       totalQuestions: quiz.questions.length,
-      answers,
+      answers: answers
     });
 
-    await result.save();
-
-    // Update the quiz to mark it as attempted for this student
+    // Update Quiz model to mark as attempted by this student
     await Quiz.findByIdAndUpdate(quizId, { $addToSet: { attemptedBy: studentId } });
 
-    res.json({ status: 'success', score, totalQuestions: quiz.questions.length });
+    res.json({ 
+      status: 'success', 
+      message: 'Quiz submitted successfully', 
+      score: score, 
+      totalQuestions: quiz.questions.length 
+    });
   } catch (error) {
     console.error('Error submitting quiz:', error);
     res.status(500).json({ status: 'error', message: 'Failed to submit quiz' });
+  }
+};
+
+exports.getStudentQuizResults = async (req, res) => {
+  try {
+    const studentId = req.user._id;
+    const results = await Result.find({ student: studentId })
+      .populate('quiz', 'subject testDate testTime')
+      .sort({ submittedAt: -1 });
+
+    const formattedResults = results.map(result => ({
+      _id: result._id,
+      subject: result.quiz.subject,
+      testDate: result.quiz.testDate,
+      testTime: result.quiz.testTime,
+      score: result.score,
+      totalQuestions: result.totalQuestions,
+      submittedAt: result.submittedAt
+    }));
+
+    res.json({ status: 'success', results: formattedResults });
+  } catch (error) {
+    console.error('Error fetching student quiz results:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to fetch quiz results' });
   }
 };
 

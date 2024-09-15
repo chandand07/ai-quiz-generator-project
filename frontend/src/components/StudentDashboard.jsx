@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate , useLocation} from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const StudentDashboard = () => {
   const [upcomingTests, setUpcomingTests] = useState([]);
@@ -24,6 +24,7 @@ const StudentDashboard = () => {
         const data = await response.json();
         if (data.status === 'success') {
           setUpcomingTests(data.quizzes.filter(quiz => !quiz.attempted && !quiz.ended));
+          setPastTests(data.quizzes.filter(quiz => quiz.attempted || quiz.ended));
         } else {
           setError(data.message || 'Failed to fetch quizzes');
         }
@@ -35,10 +36,9 @@ const StudentDashboard = () => {
       }
     };
 
-    
     const fetchQuizResults = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/quiz-results', {
+        const response = await fetch('http://localhost:5000/api/student-quiz-results', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -59,27 +59,25 @@ const StudentDashboard = () => {
 
     fetchQuizzes();
     fetchQuizResults();
+
+    // Set up a timer to check for upcoming tests every minute
+    const timer = setInterval(checkUpcomingTests, 60000);
+
+    // Clean up the timer when the component unmounts
+    return () => clearInterval(timer);
   }, [location.state?.quizSubmitted]);
 
-  const sortQuizzes = (quizzes) => {
+  const checkUpcomingTests = () => {
     const now = new Date();
-    const upcoming = [];
-    const past = [];
+    upcomingTests.forEach(test => {
+      const testDateTime = new Date(`${test.testDate}T${test.testTime}`);
+      const timeDiff = testDateTime.getTime() - now.getTime();
 
-    quizzes.forEach(quiz => {
-      const quizEndTime = new Date(quiz.testDate);
-      const [hours, minutes] = quiz.testTime.split(':');
-      quizEndTime.setHours(parseInt(hours, 10), parseInt(minutes, 10) + quiz.testDuration);
-
-      if (quizEndTime > now && !quiz.attempted) {
-        upcoming.push(quiz);
-      } else {
-        past.push(quiz);
+      if (timeDiff > 0 && timeDiff <= 60000) { // If the test starts within the next minute
+        alert(`Your test "${test.subject}" is starting now!`);
+        handleTakeTest(test);
       }
     });
-
-    setUpcomingTests(upcoming);
-    setPastTests(past);
   };
 
   const handleTakeTest = (test) => {
@@ -93,7 +91,9 @@ const StudentDashboard = () => {
       alert(`The test hasn't started yet. It will begin at ${testStartTime.toLocaleString()}.`);
     } else if (now > testEndTime) {
       alert('The test has already ended.');
-    } else {
+    }
+    else if (timeDiffStart <= 60000) { // If within 1 minute of start time
+      alert('The test has started. Good luck!');
       navigate('/quiz-code', { 
         state: { 
           quizId: test._id,
@@ -103,34 +103,15 @@ const StudentDashboard = () => {
         } 
       });
     }
-  };
-
-  const handleSubmit = async () => {
-    try {
-      console.log('Submitting quiz:', { quizId, answers: selectedAnswers });
-      const response = await fetch('http://localhost:5000/api/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ quizId, answers: selectedAnswers })
+     else {
+      navigate('/quiz-code', { 
+        state: { 
+          quizId: test._id,
+          subject: test.subject,
+          testDate: test.testDate,
+          testTime: test.testTime
+        } 
       });
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-      const data = await response.json();
-      if (data.status === 'success') {
-        alert(`Quiz submitted successfully. Your score: ${data.score}`);
-        navigate('/dashboard');
-      } else {
-        alert(data.message || 'Failed to submit quiz');
-      }
-    } catch (error) {
-      console.error('Error submitting quiz:', error);
-      alert('An error occurred. Please try again.');
     }
   };
 
@@ -165,7 +146,7 @@ const StudentDashboard = () => {
                 <td className="py-2 px-4 border">{test.subject}</td>
                 <td className="py-2 px-4 border">{test.testTime}</td>
                 <td className="py-2 px-4 border">
-                <button
+                  <button
                     onClick={() => handleTakeTest(test)}
                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded"
                   >
@@ -199,7 +180,7 @@ const StudentDashboard = () => {
                 <td className="py-2 px-4 border">{index + 1}</td>
                 <td className="py-2 px-4 border">{result.subject}</td>
                 <td className="py-2 px-4 border">{new Date(result.testDate).toLocaleDateString()}</td>
-                <td className="py-2 px-4 border">{result.score}</td>
+                <td className="py-2 px-4 border">{result.score}/{result.totalQuestions}</td>
                 <td className="py-2 px-4 border">{new Date(result.submittedAt).toLocaleString()}</td>
               </tr>
             ))}

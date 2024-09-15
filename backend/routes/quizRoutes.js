@@ -17,4 +17,5 @@ router.post('/verify-code', authController.protect, quizController.verifyQuizCod
 router.post('/submit', authController.protect, quizController.submitQuiz);
 router.get('/quiz-results', authController.protect, quizController.getQuizResults);
 router.get('/:quizId/results', authController.protect, quizController.getQuizResults);
+router.get('/student-quiz-results', authController.protect, quizController.getStudentQuizResults);
 module.exports = router;
