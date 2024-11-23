@@ -8,6 +8,8 @@ AI Quiz generator and Quiz platform
 - Timed quiz sessions
 - Comprehensive result tracking and analysis
 - Responsive design for various devices
+- Fullscreen requirement
+-Tab switching detection
 
 ## Technology Stack
 
@@ -80,11 +82,11 @@ Before setting up Nebula, ensure you have the following installed:
 3. Receive notifications when a quiz is about to start.
 4. Enter the quiz code provided by your educator to access the quiz.
 5. Complete the quiz within the allocated time.
-6. View your results and performance analytics after submission.
+6. Do not switch tabs or leave the fullscreen mode until the quiz is submitted.
+7. View your results and performance analytics after submission.
 
 ## API Integration
-
-Nebula integrates with the Google Generative AI API for quiz generation. To use this feature:
+To use this feature:
 
 1. Obtain an API key from the Google Cloud Console.
 2. Add the API key to your backend `.env` file.
