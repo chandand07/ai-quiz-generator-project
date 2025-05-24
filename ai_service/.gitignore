@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+temp_uploads/*
+!temp_uploads/.gitkeep # If you want to keep the directory in git but not its contents
+*.db
+*.sqlite3

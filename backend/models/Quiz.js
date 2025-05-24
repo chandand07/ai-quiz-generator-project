@@ -28,7 +28,7 @@ const quizSchema = new mongoose.Schema({
     ref: 'User'
   }]
 });
-quizSchema.index({ quizCode: 1 }, { unique: true });
+// quizSchema.index({ quizCode: 1 }, { unique: true });
 
 const Quiz = mongoose.model('Quiz', quizSchema);
 
