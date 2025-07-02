@@ -3,7 +3,7 @@ const router = express.Router();
 const { generateQuiz, generateQuizFromPDF } = require('../controllers/quizController');
 const quizController = require('../controllers/quizController');
 const authController = require('../controllers/authController');
-const authMiddleware = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/authmiddleware');
 
 
 
