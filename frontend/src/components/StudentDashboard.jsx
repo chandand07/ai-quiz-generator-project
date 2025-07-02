@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const StudentDashboard = () => {
   const [upcomingTests, setUpcomingTests] = useState([]);
@@ -13,7 +14,7 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/quiz/student-quizzes', {
+        const response = await fetch(`${BACKEND_URL}/api/quiz/student-quizzes`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -37,7 +38,7 @@ const StudentDashboard = () => {
     };
     const fetchQuizResults = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/student-quiz-results', {
+        const response = await fetch(`${BACKEND_URL}/api/student-quiz-results`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }

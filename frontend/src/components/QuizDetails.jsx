@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const QuizDetails = () => {
   const [quizCode, setQuizCode] = useState('');
@@ -25,7 +26,7 @@ const handleSubmit = async (e) => {
       section
     };
     console.log('Sending quiz data:', quizData);
-    const response = await fetch('http://localhost:5000/api/quiz/details', {
+    const response = await fetch(`${BACKEND_URL}/api/quiz/details`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

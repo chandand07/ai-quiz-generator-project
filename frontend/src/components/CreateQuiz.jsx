@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AIQuizGenerator from './AIQuizGenerator'; // For prompt/PDF
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-const BACKEND_URL = 'http://localhost:5000';
+
+// const BACKEND_URL = 'http://localhost:5000';
 
 const CreateQuiz = () => {
   const location = useLocation();

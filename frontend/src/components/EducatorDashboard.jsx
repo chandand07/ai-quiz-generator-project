@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link , useNavigate} from 'react-router-dom';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const EducatorDashboard = () => {
   const [quizzes, setQuizzes] = useState([]);
@@ -12,7 +13,7 @@ const EducatorDashboard = () => {
 
   const fetchQuizzes = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/quizzes', {
+      const response = await fetch(`${BACKEND_URL}/api/quizzes`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

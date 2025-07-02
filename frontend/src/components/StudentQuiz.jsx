@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const StudentQuiz = () => {
   const location = useLocation();
@@ -16,7 +17,7 @@ const StudentQuiz = () => {
   // Handle quiz submission
   const handleSubmit = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/submit', {
+      const response = await fetch(`${BACKEND_URL}/api/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

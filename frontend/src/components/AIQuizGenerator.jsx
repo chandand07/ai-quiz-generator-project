@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 
 const AIQuizGenerator = ({ onQuestionsGenerated, params }) => {
   const [file, setFile] = useState(null);
@@ -10,7 +12,7 @@ const AIQuizGenerator = ({ onQuestionsGenerated, params }) => {
 
     try {
       console.log('Sending AI generator params:', params);
-      const response = await fetch('http://localhost:5000/api/generate-quiz', {
+      const response = await fetch(`${BACKEND_URL}/api/generate-quiz`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +65,7 @@ const AIQuizGenerator = ({ onQuestionsGenerated, params }) => {
     });
 
     try {
-      const response = await fetch('http://localhost:5000/api/generate-quiz-from-pdf', {
+      const response = await fetch(`${BACKEND_URL}/api/generate-quiz-from-pdf`, {
         method: 'POST',
         body: formData,
       });

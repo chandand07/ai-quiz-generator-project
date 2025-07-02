@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const QuizResults = () => {
   const [results, setResults] = useState([]);
@@ -10,7 +11,7 @@ const QuizResults = () => {
   useEffect(() => {
     const fetchResults = async () => {
         try {
-          const response = await fetch(`http://localhost:5000/api/quiz/${quizId}/results`, {
+          const response = await fetch(`${BACKEND_URL}/api/quiz/${quizId}/results`, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
             }

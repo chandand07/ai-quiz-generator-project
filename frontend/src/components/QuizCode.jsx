@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const QuizCode = () => {
   const [quizCode, setQuizCode] = useState('');
@@ -10,7 +11,7 @@ const QuizCode = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/verify-code', {
+      const response = await fetch(`${BACKEND_URL}/api/verify-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
