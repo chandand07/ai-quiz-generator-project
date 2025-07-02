@@ -15,7 +15,7 @@ connectDB();
 const allowedOrigins = [
     'http://localhost:5173',       
     'http://127.0.0.1:5173',     
-    'https://ai-quiz-generator-project-inub71ssd-chandan-dhingras-projects.vercel.app/' 
+    'https://ai-quiz-generator-project-inub71ssd-chandan-dhingras-projects.vercel.app',  
 ];
 
 app.use(cors({
