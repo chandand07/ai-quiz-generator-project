@@ -12,10 +12,23 @@ const app = express();
 connectDB();
 
 
+const allowedOrigins = [
+    'http://localhost:5173',       
+    'http://127.0.0.1:5173',     
+    'https://ai-quiz-generator-project-inub71ssd-chandan-dhingras-projects.vercel.app/' 
+];
+
 app.use(cors({
-    origin: 'http://localhost:5173', 
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     credentials: true
-  }));
+}));
 app.use(express.json());
 
 
